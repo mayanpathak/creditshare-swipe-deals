@@ -63,14 +63,14 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// CreditShare custom colors
+				// Updated CreditShare custom colors to match grayscale theme
 				credit: {
-					primary: '#9b87f5',
-					secondary: '#7E69AB',
-					dark: '#1A1F2C',
-					light: '#D6BCFA',
-					soft: '#E5DEFF',
-					vivid: '#8B5CF6',
+					primary: '#808080', // Medium gray
+					secondary: '#A9A9A9', // Gray
+					dark: '#1A1A1A', // Very dark gray (almost black)
+					light: '#E8E8E8', // Light gray
+					soft: '#F5F5F5', // Very light gray
+					vivid: '#404040', // Dark gray
 				}
 			},
 			borderRadius: {
