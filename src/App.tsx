@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import CardHolder from "./pages/CardHolder";
 import Buyer from "./pages/Buyer";
 import NotFound from "./pages/NotFound";
+import HowItWorks from "./pages/HowItWorks";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/card-holder" element={<CardHolder />} />
           <Route path="/buyer" element={<Buyer />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
