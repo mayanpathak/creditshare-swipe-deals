@@ -17,6 +17,15 @@ const Navbar = () => {
     return location.pathname === path ? "nav-link font-bold" : "nav-link";
   };
 
+  const scrollToPreview = () => {
+    // Smooth scroll to the preview section
+    document.getElementById('preview')?.scrollIntoView({ behavior: 'smooth' });
+    // Close mobile menu if open
+    if (isMenuOpen) {
+      setIsMenuOpen(false);
+    }
+  };
+
   return (
     <nav className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md">
       <div className="container mx-auto flex items-center justify-between px-4 py-4">
@@ -38,6 +47,9 @@ const Navbar = () => {
           <Link to="/how-it-works" className={isActive("/how-it-works")}>
             How It Works
           </Link>
+          <button onClick={scrollToPreview} className="nav-link">
+            Preview
+          </button>
         </div>
 
         <div className="hidden items-center space-x-4 md:flex">
@@ -94,6 +106,12 @@ const Navbar = () => {
             >
               How It Works
             </Link>
+            <button
+              onClick={scrollToPreview}
+              className="rounded-md px-3 py-2 text-left text-base font-medium hover:bg-accent"
+            >
+              Preview
+            </button>
             <div className="flex space-x-2 pt-2">
               <Button variant="outline" className="flex-1" asChild>
                 <Link to="/login" onClick={toggleMenu}>

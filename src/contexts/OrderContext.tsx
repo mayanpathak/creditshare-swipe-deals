@@ -1,294 +1,318 @@
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useState, useContext, ReactNode } from 'react';
 import { Order, OrderCreateRequest } from '../types/api';
 import { orderService } from '../services/orderService';
-import { toast } from '../hooks/use-toast';
-import { useAuth } from './AuthContext';
 
-interface OrderContextType {
+interface OrderContextProps {
   orders: Order[];
-  acceptedOrders: Order[];
-  isLoading: boolean;
-  createOrder: (data: OrderCreateRequest) => Promise<Order>;
-  exploreOrders: () => Promise<Order[]>;
-  acceptOrder: (orderId: string) => Promise<void>;
-  cancelOrder: (orderId: string) => Promise<void>;
-  cancelAcceptance: (orderId: string) => Promise<void>;
-  confirmPayment: (orderId: string) => Promise<void>;
-  uploadProof: (orderId: string, proofUrl: string) => Promise<void>;
-  confirmDelivery: (orderId: string) => Promise<void>;
-  fetchMyOrders: () => Promise<void>;
-  fetchMyAcceptedOrders: () => Promise<void>;
+  myOrders: Order[];
+  myAcceptedOrders: Order[];
+  loading: boolean;
+  error: string | null;
+  createOrder: (orderData: OrderCreateRequest) => Promise<Order | null>;
+  getOrders: () => Promise<void>;
+  getMyOrders: () => Promise<void>;
+  getMyAcceptedOrders: () => Promise<void>;
+  acceptOrder: (orderId: string) => Promise<boolean>;
+  cancelOrder: (orderId: string) => Promise<boolean>;
+  cancelAcceptance: (orderId: string) => Promise<boolean>;
+  confirmPayment: (orderId: string) => Promise<boolean>;
+  uploadProof: (orderId: string, proofUrl: string) => Promise<boolean>;
+  confirmDelivery: (orderId: string) => Promise<boolean>;
 }
 
-const OrderContext = createContext<OrderContextType | undefined>(undefined);
+const OrderContext = createContext<OrderContextProps | undefined>(undefined);
 
-export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
+export const useOrders = () => {
+  const context = useContext(OrderContext);
+  if (!context) {
+    throw new Error('useOrders must be used within an OrderProvider');
+  }
+  return context;
+};
+
+interface OrderProviderProps {
+  children: ReactNode;
+}
+
+export const OrderProvider = ({ children }: OrderProviderProps) => {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [acceptedOrders, setAcceptedOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth();
+  const [myOrders, setMyOrders] = useState<Order[]>([]);
+  const [myAcceptedOrders, setMyAcceptedOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const createOrder = async (data: OrderCreateRequest) => {
-    setIsLoading(true);
+  const getOrders = async () => {
     try {
-      const newOrder = await orderService.createOrder(data);
-      setOrders([newOrder, ...orders]);
-      toast({
-        title: "Order created",
-        description: "Your order has been successfully created.",
-      });
+      setLoading(true);
+      const fetchedOrders = await orderService.getOrders();
+      setOrders(fetchedOrders);
+    } catch (err) {
+      setError('Failed to fetch orders');
+      console.error('Error fetching orders:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getMyOrders = async () => {
+    try {
+      setLoading(true);
+      const fetchedOrders = await orderService.getMyOrders();
+      setMyOrders(fetchedOrders);
+    } catch (err) {
+      setError('Failed to fetch your orders');
+      console.error('Error fetching my orders:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getMyAcceptedOrders = async () => {
+    try {
+      setLoading(true);
+      const fetchedOrders = await orderService.getMyAcceptedOrders();
+      setMyAcceptedOrders(fetchedOrders);
+    } catch (err) {
+      setError('Failed to fetch accepted orders');
+      console.error('Error fetching accepted orders:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createOrder = async (orderData: OrderCreateRequest): Promise<Order | null> => {
+    try {
+      setLoading(true);
+      const newOrder = await orderService.createOrder(orderData);
+
+      // Update the orders list with the new order
+      setOrders((prevOrders) => [...prevOrders, newOrder]);
+      
+      // Also update myOrders since the current user created this order
+      setMyOrders((prevOrders) => [...prevOrders, newOrder]);
+      
       return newOrder;
-    } catch (error) {
-      console.error('Order creation failed:', error);
-      toast({
-        title: "Order creation failed",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-      throw error;
+    } catch (err) {
+      setError('Failed to create order');
+      console.error('Error creating order:', err);
+      return null;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const exploreOrders = async () => {
-    setIsLoading(true);
+  const acceptOrder = async (orderId: string): Promise<boolean> => {
     try {
-      const availableOrders = await orderService.exploreOrders();
-      return availableOrders;
-    } catch (error) {
-      console.error('Failed to fetch available orders:', error);
-      toast({
-        title: "Failed to load orders",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-      throw error;
+      setLoading(true);
+      const success = await orderService.acceptOrder(orderId);
+      
+      if (success) {
+        // Update the order status in all relevant lists
+        const updatedOrders = orders.map(order => 
+          order.id === orderId ? { ...order, status: 'accepted' as const, cardHolderId: 'current-user-id' } : order
+        );
+        setOrders(updatedOrders);
+        
+        const updatedMyAcceptedOrders = [...myAcceptedOrders, 
+          ...orders.filter(order => order.id === orderId).map(order => ({ 
+            ...order, 
+            status: 'accepted' as const, 
+            cardHolderId: 'current-user-id' 
+          }))
+        ];
+        setMyAcceptedOrders(updatedMyAcceptedOrders);
+      }
+      
+      return success;
+    } catch (err) {
+      setError('Failed to accept order');
+      console.error('Error accepting order:', err);
+      return false;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const acceptOrder = async (orderId: string) => {
-    setIsLoading(true);
+  const cancelOrder = async (orderId: string): Promise<boolean> => {
     try {
-      await orderService.acceptOrder(orderId);
-      // Update the orders list
-      const updatedOrders = orders.map(order => 
-        order.id === orderId ? { ...order, status: 'accepted', cardHolderId: user?.id } : order
-      );
-      setOrders(updatedOrders);
-      toast({
-        title: "Order accepted",
-        description: "You have successfully accepted this order.",
-      });
-    } catch (error) {
-      console.error('Order acceptance failed:', error);
-      toast({
-        title: "Failed to accept order",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-      throw error;
+      setLoading(true);
+      const success = await orderService.cancelOrder(orderId);
+      
+      if (success) {
+        // Update the order status in all relevant lists
+        const updatedOrders = orders.map(order => 
+          order.id === orderId ? { ...order, status: 'cancelled' as const } : order
+        );
+        setOrders(updatedOrders);
+        
+        const updatedMyOrders = myOrders.map(order => 
+          order.id === orderId ? { ...order, status: 'cancelled' as const } : order
+        );
+        setMyOrders(updatedMyOrders);
+      }
+      
+      return success;
+    } catch (err) {
+      setError('Failed to cancel order');
+      console.error('Error cancelling order:', err);
+      return false;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const cancelOrder = async (orderId: string) => {
-    setIsLoading(true);
+  const cancelAcceptance = async (orderId: string): Promise<boolean> => {
     try {
-      await orderService.cancelOrder(orderId);
-      // Update the orders list
-      const updatedOrders = orders.map(order => 
-        order.id === orderId ? { ...order, status: 'cancelled' } : order
-      );
-      setOrders(updatedOrders);
-      toast({
-        title: "Order cancelled",
-        description: "Your order has been cancelled.",
-      });
-    } catch (error) {
-      console.error('Order cancellation failed:', error);
-      toast({
-        title: "Failed to cancel order",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-      throw error;
+      setLoading(true);
+      const success = await orderService.cancelAcceptance(orderId);
+      
+      if (success) {
+        // Update the order status in all relevant lists
+        const updatedOrders = orders.map(order => 
+          order.id === orderId ? { ...order, status: 'created' as const, cardHolderId: undefined } : order
+        );
+        setOrders(updatedOrders);
+        
+        // Remove from accepted orders
+        const updatedMyAcceptedOrders = myAcceptedOrders.filter(order => order.id !== orderId);
+        setMyAcceptedOrders(updatedMyAcceptedOrders);
+        
+        // Update in myOrders if present
+        const updatedMyOrders = myOrders.map(order => 
+          order.id === orderId ? { ...order, status: 'created' as const, cardHolderId: undefined } : order
+        );
+        setMyOrders(updatedMyOrders);
+      }
+      
+      return success;
+    } catch (err) {
+      setError('Failed to cancel acceptance');
+      console.error('Error cancelling acceptance:', err);
+      return false;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const cancelAcceptance = async (orderId: string) => {
-    setIsLoading(true);
+  const confirmPayment = async (orderId: string): Promise<boolean> => {
     try {
-      await orderService.cancelAcceptance(orderId);
-      // Update the orders list
-      const updatedOrders = orders.map(order => 
-        order.id === orderId ? { ...order, status: 'created', cardHolderId: undefined } : order
-      );
-      setOrders(updatedOrders);
-      toast({
-        title: "Acceptance cancelled",
-        description: "You have cancelled your acceptance of this order.",
-      });
-    } catch (error) {
-      console.error('Acceptance cancellation failed:', error);
-      toast({
-        title: "Failed to cancel acceptance",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-      throw error;
+      setLoading(true);
+      const success = await orderService.confirmPayment(orderId);
+      
+      if (success) {
+        // Update the order status in all relevant lists
+        const updatedOrders = orders.map(order => 
+          order.id === orderId ? { ...order, status: 'paid' as const } : order
+        );
+        setOrders(updatedOrders);
+        
+        const updatedMyOrders = myOrders.map(order => 
+          order.id === orderId ? { ...order, status: 'paid' as const } : order
+        );
+        setMyOrders(updatedMyOrders);
+        
+        const updatedMyAcceptedOrders = myAcceptedOrders.map(order => 
+          order.id === orderId ? { ...order, status: 'paid' as const } : order
+        );
+        setMyAcceptedOrders(updatedMyAcceptedOrders);
+      }
+      
+      return success;
+    } catch (err) {
+      setError('Failed to confirm payment');
+      console.error('Error confirming payment:', err);
+      return false;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const confirmPayment = async (orderId: string) => {
-    setIsLoading(true);
+  const uploadProof = async (orderId: string, proofUrl: string): Promise<boolean> => {
     try {
-      await orderService.confirmPayment(orderId);
-      // Update the orders list
-      const updatedOrders = orders.map(order => 
-        order.id === orderId ? { ...order, status: 'paid' } : order
-      );
-      setOrders(updatedOrders);
-      toast({
-        title: "Payment confirmed",
-        description: "You have confirmed the payment for this order.",
-      });
-    } catch (error) {
-      console.error('Payment confirmation failed:', error);
-      toast({
-        title: "Failed to confirm payment",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-      throw error;
+      setLoading(true);
+      const success = await orderService.uploadProof(orderId, proofUrl);
+      
+      if (success) {
+        // Update the proof URL in all relevant lists
+        const updatedOrders = orders.map(order => 
+          order.id === orderId ? { ...order, paymentProof: proofUrl } : order
+        );
+        setOrders(updatedOrders);
+        
+        const updatedMyOrders = myOrders.map(order => 
+          order.id === orderId ? { ...order, paymentProof: proofUrl } : order
+        );
+        setMyOrders(updatedMyOrders);
+        
+        const updatedMyAcceptedOrders = myAcceptedOrders.map(order => 
+          order.id === orderId ? { ...order, paymentProof: proofUrl } : order
+        );
+        setMyAcceptedOrders(updatedMyAcceptedOrders);
+      }
+      
+      return success;
+    } catch (err) {
+      setError('Failed to upload proof');
+      console.error('Error uploading proof:', err);
+      return false;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const uploadProof = async (orderId: string, proofUrl: string) => {
-    setIsLoading(true);
+  const confirmDelivery = async (orderId: string): Promise<boolean> => {
     try {
-      await orderService.uploadProof(orderId, proofUrl);
-      // Update the orders list
-      const updatedOrders = orders.map(order => 
-        order.id === orderId ? { ...order, paymentProof: proofUrl } : order
-      );
-      setOrders(updatedOrders);
-      toast({
-        title: "Proof uploaded",
-        description: "Your payment proof has been uploaded.",
-      });
-    } catch (error) {
-      console.error('Proof upload failed:', error);
-      toast({
-        title: "Failed to upload proof",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-      throw error;
+      setLoading(true);
+      const success = await orderService.confirmDelivery(orderId);
+      
+      if (success) {
+        // Update the order status in all relevant lists
+        const updatedOrders = orders.map(order => 
+          order.id === orderId ? { ...order, status: 'completed' as const } : order
+        );
+        setOrders(updatedOrders);
+        
+        const updatedMyOrders = myOrders.map(order => 
+          order.id === orderId ? { ...order, status: 'completed' as const } : order
+        );
+        setMyOrders(updatedMyOrders);
+        
+        const updatedMyAcceptedOrders = myAcceptedOrders.map(order => 
+          order.id === orderId ? { ...order, status: 'completed' as const } : order
+        );
+        setMyAcceptedOrders(updatedMyAcceptedOrders);
+      }
+      
+      return success;
+    } catch (err) {
+      setError('Failed to confirm delivery');
+      console.error('Error confirming delivery:', err);
+      return false;
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const confirmDelivery = async (orderId: string) => {
-    setIsLoading(true);
-    try {
-      await orderService.confirmDelivery(orderId);
-      // Update the orders list
-      const updatedOrders = orders.map(order => 
-        order.id === orderId ? { ...order, status: 'completed' } : order
-      );
-      setOrders(updatedOrders);
-      toast({
-        title: "Delivery confirmed",
-        description: "You have confirmed the delivery of this order.",
-      });
-    } catch (error) {
-      console.error('Delivery confirmation failed:', error);
-      toast({
-        title: "Failed to confirm delivery",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchMyOrders = async () => {
-    setIsLoading(true);
-    try {
-      const myOrders = await orderService.getMyOrders();
-      setOrders(myOrders);
-    } catch (error) {
-      console.error('Failed to fetch my orders:', error);
-      toast({
-        title: "Failed to load orders",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchMyAcceptedOrders = async () => {
-    setIsLoading(true);
-    try {
-      const myAcceptedOrders = await orderService.getMyAcceptedOrders();
-      setAcceptedOrders(myAcceptedOrders);
-    } catch (error) {
-      console.error('Failed to fetch my accepted orders:', error);
-      toast({
-        title: "Failed to load accepted orders",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <OrderContext.Provider
-      value={{
-        orders,
-        acceptedOrders,
-        isLoading,
-        createOrder,
-        exploreOrders,
-        acceptOrder,
-        cancelOrder,
-        cancelAcceptance,
-        confirmPayment,
-        uploadProof,
-        confirmDelivery,
-        fetchMyOrders,
-        fetchMyAcceptedOrders,
-      }}
-    >
+    <OrderContext.Provider value={{
+      orders,
+      myOrders,
+      myAcceptedOrders,
+      loading,
+      error,
+      createOrder,
+      getOrders,
+      getMyOrders,
+      getMyAcceptedOrders,
+      acceptOrder,
+      cancelOrder,
+      cancelAcceptance,
+      confirmPayment,
+      uploadProof,
+      confirmDelivery
+    }}>
       {children}
     </OrderContext.Provider>
   );
-};
-
-export const useOrder = () => {
-  const context = useContext(OrderContext);
-  if (context === undefined) {
-    throw new Error('useOrder must be used within an OrderProvider');
-  }
-  return context;
 };

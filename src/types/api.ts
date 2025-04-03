@@ -9,6 +9,9 @@ export interface User {
   createdAt: Date;
   trustScore?: number;
   kycVerified?: boolean;
+  // Additional fields from the mongoose schema
+  updatedAt?: Date;
+  password?: string; // Note: should not be exposed to client
 }
 
 export interface AuthResponse {
@@ -103,5 +106,24 @@ export interface Notification {
   message: string;
   type: 'order' | 'payment' | 'dispute' | 'system';
   read: boolean;
+  createdAt: Date;
+}
+
+// Mongoose schema representation
+export interface UserSchema {
+  email: string;
+  name: string;
+  password: string;
+  role: 'buyer' | 'credit_card_holder';
+  trustScore: number;
+  kycVerified: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ReferralInvite {
+  email: string;
+  invitedBy: string;
+  status: 'pending' | 'accepted' | 'expired';
   createdAt: Date;
 }

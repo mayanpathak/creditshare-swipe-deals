@@ -8,6 +8,10 @@ import FAQSection from '@/components/FAQSection';
 import Testimonials from '@/components/Testimonials';
 import CTASection from '@/components/CTASection';
 import Footer from '@/components/Footer';
+import PreviewSlideshow from '@/components/PreviewSlideshow';
+import FeatureHighlights from '@/components/FeatureHighlights';
+import MobileAppPromo from '@/components/MobileAppPromo';
+import TrustScoreExplainer from '@/components/TrustScoreExplainer';
 
 const Index = () => {
   return (
@@ -15,8 +19,12 @@ const Index = () => {
       <Navbar />
       <main>
         <HeroSection />
+        <FeatureHighlights />
         <HowItWorks />
+        <PreviewSlideshow />
+        <TrustScoreExplainer />
         <TrustSection />
+        <MobileAppPromo />
         <Testimonials />
         <FAQSection />
         <CTASection />
