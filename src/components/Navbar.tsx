@@ -4,6 +4,7 @@ import { MenuIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
 import Logo from './Logo';
+import ThemeToggle from './ThemeToggle';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -53,6 +54,7 @@ const Navbar = () => {
         </div>
 
         <div className="hidden items-center space-x-4 md:flex">
+          <ThemeToggle />
           <Button variant="outline" asChild>
             <Link to="/login">Log In</Link>
           </Button>
@@ -62,16 +64,19 @@ const Navbar = () => {
         </div>
 
         {/* Mobile menu button */}
-        <button
-          className="rounded-md p-2 text-foreground md:hidden"
-          onClick={toggleMenu}
-        >
-          {isMenuOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <MenuIcon className="h-6 w-6" />
-          )}
-        </button>
+        <div className="flex items-center md:hidden">
+          <ThemeToggle />
+          <button
+            className="ml-2 rounded-md p-2 text-foreground"
+            onClick={toggleMenu}
+          >
+            {isMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <MenuIcon className="h-6 w-6" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}

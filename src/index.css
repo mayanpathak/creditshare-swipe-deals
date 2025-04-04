@@ -80,7 +80,7 @@
 
 @layer components {
   .credit-gradient {
-    @apply bg-gradient-to-r from-gray-300 to-gray-500;
+    @apply bg-gradient-to-r from-gray-300 to-gray-500 dark:from-gray-600 dark:to-gray-800;
   }
   
   .credit-card {
@@ -92,15 +92,15 @@
   }
 
   .swipe-card {
-    @apply absolute h-[70vh] w-[90vw] max-w-[400px] cursor-grab rounded-2xl bg-white shadow-xl transition-transform md:h-[600px];
+    @apply absolute h-[70vh] w-[90vw] max-w-[400px] cursor-grab rounded-2xl bg-white shadow-xl transition-transform md:h-[600px] dark:bg-gray-800;
   }
 
   .hero-text {
-    @apply bg-gradient-to-r from-gray-600 to-gray-800 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-gray-600 to-gray-800 bg-clip-text text-transparent dark:from-gray-400 dark:to-gray-200;
   }
   
   .nav-link {
-    @apply relative px-4 py-2 text-lg font-medium text-foreground transition-colors hover:text-gray-600;
+    @apply relative px-4 py-2 text-lg font-medium text-foreground transition-colors hover:text-gray-600 dark:hover:text-gray-300;
   }
 
   /* Added animation classes */
