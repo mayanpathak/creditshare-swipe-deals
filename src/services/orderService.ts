@@ -7,32 +7,38 @@ export const orderService = {
     return api.post('/orders/create', data);
   },
 
-  exploreOrders: async (): Promise<Order[]> => {
+  getOrders: async (): Promise<Order[]> => {
     return api.get('/orders/explore');
   },
 
-  acceptOrder: async (orderId: string): Promise<void> => {
-    return api.post('/orders/accept', { orderId });
+  acceptOrder: async (orderId: string): Promise<boolean> => {
+    await api.post('/orders/accept', { orderId });
+    return true; // Return boolean to match the context expectations
   },
 
-  cancelOrder: async (orderId: string): Promise<void> => {
-    return api.post('/orders/cancel', { orderId });
+  cancelOrder: async (orderId: string): Promise<boolean> => {
+    await api.post('/orders/cancel', { orderId });
+    return true; // Return boolean to match the context expectations
   },
 
-  cancelAcceptance: async (orderId: string): Promise<void> => {
-    return api.post('/orders/cancel-acceptance', { orderId });
+  cancelAcceptance: async (orderId: string): Promise<boolean> => {
+    await api.post('/orders/cancel-acceptance', { orderId });
+    return true; // Return boolean to match the context expectations
   },
 
-  confirmPayment: async (orderId: string): Promise<void> => {
-    return api.post('/orders/confirm-payment', { orderId });
+  confirmPayment: async (orderId: string): Promise<boolean> => {
+    await api.post('/orders/confirm-payment', { orderId });
+    return true; // Return boolean to match the context expectations
   },
 
-  uploadProof: async (orderId: string, proofUrl: string): Promise<void> => {
-    return api.post('/orders/upload-proof', { orderId, proofUrl });
+  uploadProof: async (orderId: string, proofUrl: string): Promise<boolean> => {
+    await api.post('/orders/upload-proof', { orderId, proofUrl });
+    return true; // Return boolean to match the context expectations
   },
 
-  confirmDelivery: async (orderId: string): Promise<void> => {
-    return api.post('/orders/confirm-delivery', { orderId });
+  confirmDelivery: async (orderId: string): Promise<boolean> => {
+    await api.post('/orders/confirm-delivery', { orderId });
+    return true; // Return boolean to match the context expectations
   },
 
   getMyOrders: async (): Promise<Order[]> => {
