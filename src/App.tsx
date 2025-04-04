@@ -14,6 +14,7 @@ import HowItWorks from "./pages/HowItWorks";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import SignUp from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
               {/* Auth routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/signup" element={<SignUp />} />
               
               {/* Authenticated routes */}
               <Route path="/dashboard" element={<Dashboard />} />
